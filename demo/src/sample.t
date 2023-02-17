@@ -29,6 +29,15 @@ versionInfo:    GameID
 		"This is a simple test game that demonstrates the features
 		of the debugTool library.
 		<.p>
+		Examining the pebble will output a stack trace (with
+		pebble.desc() at the top of the stack).
+		<.p>
+		Taking the pebble will encounter a <q>breakpoint</q> and drop
+		control to the interactive debugger.
+		<.p>
+		The debugger can also be started by using the >BREAKPOINT
+		command at the regular parser prompt.
+		<.p>
 		Consult the README.txt document distributed with the library
 		source for a quick summary of how to use the library in your
 		own games.
@@ -56,35 +65,4 @@ startRoom: Room 'Void'
 	}
 ;
 
-gameMain:       GameMainDef
-	initialPlayerChar = me
-/*
-	newGame() {
-		local foo, bar;
-
-		// Set some variables for the breakpoint to output
-		foo = 123;
-		bar = '[This space intentionally left blank]';
-
-		// Kludge so the compiler won't complain that we defined
-		// variables that aren't used.
-		if(foo) {}
-		if(bar) {}
-
-		"\nThis is some placeholder text that comes before the
-			stack. ";
-
-		//__debugTool.breakpoint(&outputStuff, self);
-		//__debugTool.breakpoint(&stackTrace);
-		//__debugTool.stackTrace(nil, 3);
-		__debugTool.stackTrace();
-
-		"\nThis is the placeholder text that comes after the
-			stack. ";
-
-		"\nThis is some placeholder text that comes before the
-			breakpoint. ";
-		__debugTool.breakpoint();
-	}
-*/
-;
+gameMain: GameMainDef initialPlayerChar = me;
