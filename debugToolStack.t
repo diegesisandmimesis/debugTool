@@ -2,7 +2,10 @@
 #include <adv3.h>
 #include <en_us.h>
 
+#include "debugTool.h"
+
 modify __debugTool
+	// Text header/footer used in stackTrace().
 	stackFrameWrapper0 = '=====New Stack Frame====='
 	stackFrameWrapper1 = nil
 
@@ -25,9 +28,16 @@ modify __debugTool
 			if(fr.obj_.ofKind(AnonFuncPtr)) {
 				ret.append('{anonFunc}');
 			} else {
-				ret.append(valToSymbol(fr.self_));
+				if(fr.self_ != nil) {
+					ret.append(valToSymbol(fr.self_));
+				} else {
+					ret.append('???');
+				}
 				ret.append('.');
-				ret.append(valToSymbol(fr.prop_));
+				if(fr.prop_ != nil)
+					ret.append(valToSymbol(fr.prop_));
+				else
+					ret.append('???');
 			}
 		} else {
 			ret.append('(System)');
@@ -85,62 +95,100 @@ modify __debugTool
 		return(toString(ret));
 	}
 
+	// Returns a vector of strings describing the stack frame at the
+	// given depth.
 	_stackTrace(depth, flags) {
-		local st;
+		local r, st, v;
 
-		if(depth == nil) depth = 1;
+		// One is us, so we always start at at least 2.
+		if(depth == nil)
+			depth = 1;
 		depth += 1;
 
 		st = t3GetStackTrace(depth, flags);
 		if(st == nil)
 			return(nil);
 
-		if(stackFrameWrapper0) _debug(stackFrameWrapper0);
+		v = new Vector();
 
-		_stackTraceSrc(st);
-		_stackTraceNamedArgs(st);
-		_stackTraceArgs(st);
-		_stackTraceLocals(st);
+		// Add the various bits of information if they're
+		// available.
+		if((r = _stackTraceSrc(st)) != nil)
+			v.append(r);
+		if((r = _stackTraceNamedArgs(st)) != nil)
+			v.appendAll(r);
+		if((r = _stackTraceArgs(st)) != nil)
+			v.appendAll(r);
+		if((r = _stackTraceLocals(st)) != nil)
+			v.appendAll(r);
 
-		if(stackFrameWrapper1) _debug(stackFrameWrapper1);
-
-		return(true);
+		return(v);
 	}
 
+	// The "name" of the frame location:  usually the file name and
+	// line number.
 	_stackTraceSrc(obj) {
-		_debug(formatStackFrame(obj, true), nil, 1);
+		return(formatStackFrame(obj, true));
 	}
 
+	// The arguments to the frame.
 	_stackTraceArgs(obj) {
+		local r;
+
 		if((obj.argList_ == nil) || (obj.argList_.length == 0))
-			return;
-		_debug('arguments:', nil, 2);
+			return(nil);
+
+		r = new Vector();
+		r.append(_indent(1) + 'arguments:');
 		obj.argList_.forEach(function(v) {
-			_debug('<<valToSymbol(v)>>', nil, 3);
+			r.append(_indent(2) + '<<valToSymbol(v)>>');
 		});
+
+		return(r);
 	}
 
+	// Named arguments passed to the frame.
 	_stackTraceNamedArgs(obj) {
+		local r;
+
 		if(obj.namedArgs_ == nil)
-			return;
-		_debug('named arguments:', nil, 2);
+			return(nil);
+
+		r = new Vector();
+		r.append(_indent(1) + 'named arguments:');
 		obj.namedArgs_.forEachAssoc(function(k, v) {
-			_debug('<<k>> = <<valToSymbol(v)>>', nil, 3);
+			r.append(_indent(2) + '<<k>> = <<valToSymbol(v)>>');
 		});
+
+		return(r);
 	}
 
+	// Local variables in the frame.
 	_stackTraceLocals(obj) {
+		local r;
+
 		if((obj.locals_ == nil)
 			|| (obj.locals_.keysToList.length() == 0))
-			return;
-		_debug('local variables:', nil, 2);
+			return(nil);
+
+		r = new Vector();
+		r.append(_indent(1) + 'local variables:');
 		obj.locals_.forEachAssoc(function(k, v) {
-			_debug('<<k>> = <<valToSymbol(v)>>', nil, 3);
+			r.append(_indent(2) + '<<k>> = <<valToSymbol(v)>>');
 		});
+
+		return(r);
 	}
 
+	// External method for displaying a stack trace.
 	stackTrace(start?, depth?, flags?) {
-		local i;
+		local i, v;
+
+		// This isn't how we print stack traces in the debugger,
+		// so if we've been called during a breakpoint then we
+		// must've been called by something in the game, which will
+		// not work as intended, so we bail.
+		if(_breakpointLock == true) return;
 
 		if(start == nil)
 			start = 1;
@@ -152,7 +200,14 @@ modify __debugTool
 			flags = T3GetStackLocals;
 
 		for(i = start; i < start + depth; i++) {
-			_stackTrace(i, flags);
+			if(stackFrameWrapper0) _debug(stackFrameWrapper0);
+			v = _stackTrace(i, flags);
+			if(v) {
+				v.toList.forEach(function(o) {
+					_debug(o);
+				});
+			}
+			if(stackFrameWrapper1) _debug(stackFrameWrapper1);
 		}
 	}
 ;

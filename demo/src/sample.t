@@ -50,7 +50,7 @@ startRoom: Room 'Void'
 
 	dobjFor(Take) {
 		action() {
-			__debugTool.breakpoint(&stackTrace);
+			__debugTool.breakpoint();
 			inherited();
 		}
 	}
@@ -71,15 +71,20 @@ gameMain:       GameMainDef
 		if(foo) {}
 		if(bar) {}
 
-		"This is some placeholder text that comes before the
-			breakpoint. ";
+		"\nThis is some placeholder text that comes before the
+			stack. ";
 
 		//__debugTool.breakpoint(&outputStuff, self);
 		//__debugTool.breakpoint(&stackTrace);
-		__debugTool.stackTrace(nil, 1);
+		//__debugTool.stackTrace(nil, 3);
+		__debugTool.stackTrace();
 
-		"This is the placeholder text that comes after the
-			breakpoint.\n ";
+		"\nThis is the placeholder text that comes after the
+			stack. ";
+
+		"\nThis is some placeholder text that comes before the
+			breakpoint. ";
+		__debugTool.breakpoint();
 	}
 */
 ;
