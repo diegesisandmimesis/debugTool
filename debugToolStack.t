@@ -4,6 +4,8 @@
 
 #include "debugTool.h"
 
+#ifdef __DEBUG_TOOL
+
 modify __debugTool
 	// Text header/footer used in stackTrace().
 	stackFrameWrapper0 = '=====New Stack Frame====='
@@ -211,3 +213,5 @@ modify __debugTool
 		}
 	}
 ;
+
+#endif // __DEBUG_TOOL

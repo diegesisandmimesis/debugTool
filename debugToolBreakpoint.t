@@ -2,6 +2,8 @@
 #include <adv3.h>
 #include <en_us.h>
 
+#ifdef __DEBUG_TOOL
+
 #include <dynfunc.h>
 
 #include "debugTool.h"
@@ -159,7 +161,7 @@ modify __debugTool
 	breakpointPrint(st?) {
 		local i, fr, r;
 
-		i = _breakpointDepth(st) + _breakpointOffset;
+		i = _breakpointDepth(st) + _breakpointOffset - 1;
 		fr = t3GetStackTrace(i, T3GetStackLocals);
 		if(fr == nil) {
 			"\tno stack frame found\n ";
@@ -272,14 +274,20 @@ modify __debugTool
 	// Compile the passed string as a T3 command, setting the result
 	// as the breakpointUserCommand() method if compilation succeeds.
 	breakpointCompile(buf) {
-		local r;
+		local fn, r;
 
 		r = nil;
 
+		// Kludge to get this working with emscripten-based
+		// interpreters.
+#ifdef DEBUG_TOOL_EMSCRIPTEN_FIX
+		buf = 'function() { return(' + buf + '); }';
+#endif // DEBUG_TOOL_EMSCRIPTEN_FIX
+
 		// Do everything in a try/catch block to handle errors.
 		try {
-			setMethod(&breakpointUserCommand,
-				Compiler.compile(buf));
+			fn = Compiler.compile(buf);
+			r = fn();
 		}
 		// Compiler chucked a wobbly;  print the exception and bail.
 		catch(Exception e) {
@@ -291,10 +299,8 @@ modify __debugTool
 
 		// Compile succeeded, so we evaluate the new method and
 		// print the results (to the limit of valToSymbol()).
-		r = breakpointUserCommand();
 		"\n<<valToSymbol(r)>>\n ";
 	}
-
-	// Stub method.  It gets overwritten by the compiler, above.
-	breakpointUserCommand() {}
 ;
+
+#endif // __DEBUG_TOOL
