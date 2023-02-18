@@ -1,0 +1,12 @@
+-D LANGUAGE=en_us
+-D MESSAGESTYLE=neu
+-D __DEBUG_TOOL
+-D DEBUG_TOOL_CATCH_ALL
+-Fy obj -Fo obj
+-o games/catch.t3
+-lib system
+-lib adv3/adv3
+-lib ../debugTool
+-source reflect.t
+-source dynfunc.t
+-source src/catch.t

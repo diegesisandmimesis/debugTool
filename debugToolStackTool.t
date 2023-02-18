@@ -18,24 +18,6 @@ modify __debugTool
 	// to divide paths in a filename.
 	_pathSeparator = '/'
 
-	_stack = nil
-
-	setStack(v?) {
-		if(v == nil) { v = t3GetStackTrace().sublist(3); }
-		if((v == nil) || (v.length < 1)) return(nil);
-		_stack = v;
-
-		return(_stack);
-	}
-
-	getStack() { return(_stack); }
-	getStackFrame(depth?) {
-		if(_stack == nil) return(nil);
-		if(depth == nil) depth = 1;
-		if((depth < 1) || (depth > _stack.length)) return(nil);
-		return(_stack[depth]);
-	}
-
 	// Lifted more or less directly from reflect.t
 	formatStackFrame(fr, includeSourcePos) {
 		local ar, fn, i, len, ret;
@@ -115,42 +97,6 @@ modify __debugTool
 		return(toString(ret));
 	}
 
-	_printStackFrameInfoVector(v, err?) {
-		if(v == nil) {
-			if(err != nil)
-				"\n<<err>>\n ";
-			else
-				"\nno stack frame found\n ";
-		} else {
-			v.toList().forEach(function(o) {
-				"\n<<o>>\n ";
-			});
-		}
-	}
-
-	_stackFrameInfo(st) {
-		local r, v;
-
-		if(st == nil) return(nil);
-
-		v = new Vector();
-
-		// Add the various bits of information if they're
-		// available.
-		if((r = _stackTraceSrc(st)) != nil)
-			v.append(r);
-		if((r = _stackTraceNamedArgs(st)) != nil)
-			v.appendAll(r);
-		if((r = _stackTraceArgs(st)) != nil)
-			v.appendAll(r);
-		if((r = _stackTraceSelf(st)) != nil)
-			v.appendAll(r);
-		if((r = _stackTraceLocals(st)) != nil)
-			v.appendAll(r);
-
-		return(v);
-	}
-
 	// Returns a vector of strings describing the stack frame at the
 	// given depth.
 	_stackTrace(depth, flags) {
@@ -159,16 +105,11 @@ modify __debugTool
 		// One is us, so we always start at at least 2.
 		if(depth == nil)
 			depth = 1;
-		//depth += 1;
+		depth += 1;
 
-		st = getStack();
-		if(st == nil)
-			return(nil);
-/*
 		st = t3GetStackTrace(depth, flags);
 		if(st == nil)
 			return(nil);
-*/
 
 		v = new Vector();
 
@@ -313,14 +254,13 @@ modify __debugTool
 
 	// External method for displaying a stack trace.
 	stackTrace(start?, depth?, flags?) {
-/*
 		local i, v;
 
 		// This isn't how we print stack traces in the debugger,
 		// so if we've been called during a breakpoint then we
 		// must've been called by something in the game, which will
 		// not work as intended, so we bail.
-		if(_debuggerLock == true) return;
+		if(_breakpointLock == true) return;
 
 		if(start == nil)
 			start = 1;
@@ -341,7 +281,6 @@ modify __debugTool
 			}
 			if(stackFrameWrapper1) _debug(stackFrameWrapper1);
 		}
-*/
 	}
 ;
 

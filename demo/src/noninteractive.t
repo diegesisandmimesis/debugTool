@@ -40,6 +40,7 @@ gameMain:       GameMainDef
 		if(foo) {}
 		if(bar) {}
 
+/*
 		"<.p>This is some placeholder text that comes before the
 			stack trace.<.p> ";
 
@@ -48,6 +49,7 @@ gameMain:       GameMainDef
 
 		"<.p>This is the placeholder text that comes after the
 			stack trace.<.p>  ";
+*/
 
 		"<.p>This is some placeholder text that comes before the
 			breakpoint.<.p> ";
