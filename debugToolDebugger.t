@@ -1,4 +1,9 @@
 #charset "us-ascii"
+//
+// debugToolDebugger.t
+//
+// A rudimentary interactive debugger.
+//
 #include <adv3.h>
 #include <en_us.h>
 
@@ -6,15 +11,23 @@
 
 #ifdef __DEBUG_TOOL
 
+#include <dynfunc.h>
+
+// Enum for all of our interactive debugger commands.
 enum DebugToolCmdExit, DebugToolCmdHelp, DebugToolCmdPrint,
 	DebugToolCmdSelf, DebugToolCmdStack, DebugToolCmdDown,
 	DebugToolCmdUp;
 
+// Modify the T3StackInfo to include a flag that we use to avoid
+// recursion (calling something that sets a breakpoint from within
+// the debugger, for example).
 modify T3StackInfo
 	__debugToolDebugger = nil
 ;
 
+// The interactive debugger.
 modify __debugTool
+	// The command prompt for the interactive debugger.
 	debuggerPrompt = '&gt;&gt;&gt; '
 
 	// LookupTable of the debugger commands and the methods to invoke for
@@ -39,16 +52,26 @@ modify __debugTool
 	// in a loop.
 	_debuggerLock = nil
 
+	// Interactive debugger entry point.
+	// Arg is the stack to use.  If it's nil, we'll try to guess what
+	// stack to use.  This will work if __debugTool.debugger() was
+	// called by the context that wants to be the top frame of the
+	// stack, and it'll fail in various hillariously unpredictable
+	// ways otherwise.
+	// When in doubt, grab the stack yourself (via e.g. t3GetStackTrace()
+	// and pass it as an arg).
 	debugger(st?) {
 		local cmd, r;
 
+		// Make sure we're not recursing.
 		if(_debuggerLock == true) return;
 
+		// Set the lock.
 		_debuggerLock = true;
 
-		// Get the stack frame that called us.  The two is a magic
-		// number;  one is the current frame (this method) so
-		// two is our direct caller.
+		// If st is nil, setStack() will try to guess and return
+		// the stack it decided to use.  If st is non-nil, then
+		// setStack() will just set it and return the same value.
 		st = setStack(st);
 		if(st == nil) {
 			"\n===unable to get stack, exiting debugger===\n ";

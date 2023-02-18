@@ -1,4 +1,10 @@
 #charset "us-ascii"
+//
+// debugToolException.t
+//
+// Convenience methods for handling exceptions thrown and caught in
+// the main event scheduler.
+//
 #include <adv3.h>
 #include <en_us.h>
 

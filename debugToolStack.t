@@ -1,4 +1,9 @@
 #charset "us-ascii"
+//
+// debugToolStack.t
+//
+// Logic for displaying information about stack frames.
+//
 #include <adv3.h>
 #include <en_us.h>
 

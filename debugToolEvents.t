@@ -1,4 +1,12 @@
 #charset "us-ascii"
+//
+// debugToolEvents.t
+//
+// Tweaks to the adv3 main event scheduler.  By default runScheduler()
+// catches all exceptions, prints them, and then continues execution.
+// Here we just insert a call to the interactive debugger in some of
+// the "interesting" exception handlers.
+//
 #include <adv3.h>
 #include <en_us.h>
 

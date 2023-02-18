@@ -1,4 +1,9 @@
 #charset "us-ascii"
+//
+// debugToolActions.t
+//
+// Defines a system action that drops control to the interactive debugger.
+//
 #include <adv3.h>
 #include <en_us.h>
 
