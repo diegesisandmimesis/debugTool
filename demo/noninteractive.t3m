@@ -8,4 +8,4 @@
 -lib ../debugTool
 -source reflect.t
 -source dynfunc.t
--source src/noninteractive.t
+-source noninteractive.t

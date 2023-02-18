@@ -26,7 +26,9 @@ modify __debugTool
 	_stack = nil
 
 	setStack(v?) {
-		if(v == nil) { v = t3GetStackTrace().sublist(3); }
+		if(v == nil) {
+			v = t3GetStackTrace(nil, T3GetStackLocals).sublist(3);
+		}
 		if((v == nil) || (v.length < 1)) return(nil);
 		_stack = v;
 
@@ -118,6 +120,20 @@ modify __debugTool
 			}
 		}
 		return(toString(ret));
+	}
+
+	_getFrameSourceFile(fr) {
+		if((fr == nil) || (fr.srcInfo_ == nil))
+			return(nil);
+
+		return(fr.srcInfo_[1]);
+	}
+
+	_getFrameSourceLine(fr) {
+		if((fr == nil) || (fr.srcInfo_ == nil))
+			return(nil);
+
+		return(fr.srcInfo_[2]);
 	}
 
 	_printStackFrameInfoVector(v, err?) {
@@ -256,23 +272,19 @@ modify __debugTool
 		r.append(_indent(2) + valToSymbol(obj.self_));
 
 		// Now all the properties.
+		// We sort the property list alphabetically before outputting
+		// them.
 		l = obj.self_.getPropList();
+		l = l.sort(nil, { a, b: toString(a).compareTo(toString(b)) });
 		l.forEach(function(o) {
 			if(!obj.self_.propDefined(o, PropDefDirectly))
 				return;
+
 			v = _stackTraceSelfFullProp(obj.self_, o,
 				skipUnprintable);
 			if(v == nil)
 				return;
 			r.append(_indent(3) + valToSymbol(o) + ' = ' + v);
-/*
-				+ valToSymbol(obj.self_.(o)));
-			r.append(_indent(3) + valToSymbol(o) + ' = '
-				+ ((obj.self_.propType(o) != TypeDString)
-					? valToSymbol(obj.self_.(o))
-					: '[double-quoted string]'
-				));
-*/
 		});
 
 		return(r);
@@ -301,16 +313,24 @@ modify __debugTool
 
 	// Local variables in the frame.
 	_stackTraceLocals(obj) {
-		local r;
+		local l, r;
 
 		if((obj.locals_ == nil)
 			|| (obj.locals_.keysToList.length() == 0))
 			return(nil);
 
 		r = new Vector();
+
 		r.append(_indent(1) + 'local variables:');
-		obj.locals_.forEachAssoc(function(k, v) {
-			r.append(_indent(2) + '<<k>> = <<valToSymbol(v)>>');
+
+		// Local variables are in a LookupTable in obj.locals_
+		// We sort the keys alphabetically so we can output them
+		// in some sort of useful order.
+		l = obj.locals_.keysToList();
+		l = l.sort(nil, { a, b: toString(a).compareTo(toString(b)) });
+		l.forEach(function(k) {
+			r.append(_indent(2)
+				+ '<<k>> = <<valToSymbol(obj.locals_[k])>>');
 		});
 
 		return(r);

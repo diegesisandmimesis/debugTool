@@ -13,8 +13,14 @@
 
 #include <dynfunc.h>
 
+class DebuggerOutputStream: OutputStream
+	writeFromStream(txt) {
+		aioSay(txt);
+	}
+;
+
 // Enum for all of our interactive debugger commands.
-enum DebugToolCmdExit, DebugToolCmdHelp, DebugToolCmdPrint,
+enum DebugToolCmdExit, DebugToolCmdHelp, DebugToolCmdList, DebugToolCmdPrint,
 	DebugToolCmdSelf, DebugToolCmdStack, DebugToolCmdDown,
 	DebugToolCmdUp;
 
@@ -36,6 +42,7 @@ modify __debugTool
 		'?' -> &debuggerHelp,
 		'help' -> &debuggerHelp,
 		'exit' -> &debuggerExit,
+		'list' -> &debuggerList,
 		'print' -> &debuggerPrint,
 		'self' -> &debuggerSelf,
 		'stack' -> &debuggerStack,
@@ -61,13 +68,18 @@ modify __debugTool
 	// When in doubt, grab the stack yourself (via e.g. t3GetStackTrace()
 	// and pass it as an arg).
 	debugger(st?) {
-		local cmd, r;
+		local cmd, oldStream, r;
 
 		// Make sure we're not recursing.
 		if(_debuggerLock == true) return;
 
 		// Set the lock.
 		_debuggerLock = true;
+
+		oldStream = outputManager.curOutputStream;
+		//oldMode = outputManager.htmlMode;
+		outputManager.setOutputStream(new DebuggerOutputStream());
+		//outputManager.htmlMode = nil;
 
 		// If st is nil, setStack() will try to guess and return
 		// the stack it decided to use.  If st is non-nil, then
@@ -108,6 +120,9 @@ modify __debugTool
 				// action, which will send us through the
 				// input loop again.
 				if(r == DebugToolCmdExit) {
+					outputManager.curOutputStream.flushStream();
+					outputManager.setOutputStream(oldStream);
+					//outputManager.htmlMode = oldMode;
 					_debuggerLock = nil;
 					return;
 				}
@@ -180,6 +195,61 @@ modify __debugTool
 		\n<b>up</b>\t\tmove to the next higher stack frame
 		\n ";
 		return(DebugToolCmdHelp);
+	}
+
+	// List the source for the current stack frame.
+	debuggerList() {
+		local fileHandle, fname, fr, line, lnum, v;
+
+		fr = getStackFrame(_debuggerFrameOffset + 1);
+		if(fr == nil) {
+			"\tno stack frame found\n ";
+			return(DebugToolCmdList);
+		}
+
+		fname = _getFrameSourceFile(fr);
+		lnum = _getFrameSourceLine(fr);
+		if((fname == nil) || (lnum == nil)) {
+			"\tunable to determine source file\n ";
+			return(DebugToolCmdList);
+		}
+fname = '../' + fname;
+		try {
+			fileHandle = File.openTextFile(fname, FileAccessRead,
+				'utf8');
+			v = new Vector();
+			//buf = new StringBuffer(fileHandle.getFileSize());
+			line = fileHandle.readFile();
+			while(line != nil) {
+				v.append(line);
+				line = fileHandle.readFile();
+			}
+			fileHandle.closeFile();
+			_debuggerDisplaySource(v, lnum);
+		}
+		catch(Exception e) {
+			e.displayException();
+		}
+		finally {
+			return(DebugToolCmdList);
+		}
+	}
+
+	_debuggerDisplaySource(src, lnum) {
+		local i, min, max, r;
+
+		min = lnum - 10;
+		max = lnum + 10;
+		if(min < 1) min = 1;
+		if(max > src.length) max = src.length;
+		if(min > max) min = max;
+		if(max < min) max = min;
+		//inputManager.cancelInputInProgress(nil);
+		for(i = min; i <= max; i++) {
+			r = rexReplace('\n', toString(src[i]), '', ReplaceAll);
+			//tadsSay('\n<<%03d i>> <<r>>\n ');
+			"\n<<%03d i>> <<r>>\n ";
+		}
 	}
 
 	// Print the details of the current stack frame.
