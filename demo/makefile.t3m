@@ -1,6 +1,7 @@
 -D LANGUAGE=en_us
 -D MESSAGESTYLE=neu
 -D __DEBUG_TOOL
+-D DEBUG_TOOL_PATH='..'
 -Fy obj -Fo obj
 -o games/game.t3
 -lib system

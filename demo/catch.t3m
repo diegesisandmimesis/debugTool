@@ -2,6 +2,7 @@
 -D MESSAGESTYLE=neu
 -D __DEBUG_TOOL
 -D DEBUG_TOOL_CATCH_ALL
+-D DEBUG_TOOL_PATH='..'
 -Fy obj -Fo obj
 -o games/catch.t3
 -lib system

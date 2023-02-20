@@ -36,7 +36,7 @@
 //
 // ...or to add...
 //
-//	-D DEBUG_TOOL_PATH '..'
+//	-D DEBUG_TOOL_PATH='..'
 //
 // ...to the makefile.
 //
@@ -53,10 +53,12 @@
 // IF THIS IS ALL TOO CONFUSING
 //
 // You can just keep the source and the story file in the same directory
-// and not use DEBUG_TOOL_PATH at all.
+// and leave DEBUG_TOOL_PATH as '.' (the current directory).
 //
 //
-#define DEBUG_TOOL_PATH '..'
+#ifndef DEBUG_TOOL_PATH
+#define DEBUG_TOOL_PATH '.'
+#endif // DEBUG_TOOL_PATH
 
 // A emscripten-specific fix for the interactive debugger.
 // If you're not debugging in a web-based interpreter you probably don't

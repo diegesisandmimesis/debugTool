@@ -32,7 +32,9 @@ versionInfo:    GameID
 		This just adds hooks for __debugTool to the exception
 		handlers in the game's main event loop, dropping into
 		the interactive debugger whenever a <q>bad</q> exception is
-		thrown.
+		thrown (that is, an exception not related to normal
+		parser behavior:  runtime errors are <q>bad</q>, a verify()
+		method terminating command processing is not).
 		<.p>
 		The pebble.dobjFor(Take) handler has a (deliberate)
 		error that will generate a runtime error, so you can see

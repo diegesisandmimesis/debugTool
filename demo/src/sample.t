@@ -29,9 +29,6 @@ versionInfo:    GameID
 		"This is a simple test game that demonstrates the features
 		of the debugTool library.
 		<.p>
-		Examining the pebble will output a stack trace (with
-		pebble.desc() at the top of the stack).
-		<.p>
 		Taking the pebble will encounter a <q>breakpoint</q> and drop
 		control to the interactive debugger.
 		<.p>
@@ -52,8 +49,7 @@ startRoom: Room 'Void'
 ;
 +me: Person;
 +pebble: Thing 'small round pebble' 'pebble'
-	"A small, round pebble.  It has debugging information:
-		<<__debugTool.stackTrace()>> "
+	"A small, round pebble, marked <q>foozle = <<toString(foozle)>></q>. "
 
 	foozle = 0
 
