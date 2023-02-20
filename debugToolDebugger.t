@@ -15,6 +15,7 @@
 
 class DebuggerOutputStream: OutputStream
 	writeFromStream(txt) {
+		//aioSay(txt.specialsToText());
 		aioSay(txt);
 	}
 ;
@@ -22,7 +23,7 @@ class DebuggerOutputStream: OutputStream
 // Enum for all of our interactive debugger commands.
 enum DebugToolCmdExit, DebugToolCmdHelp, DebugToolCmdList, DebugToolCmdPrint,
 	DebugToolCmdSelf, DebugToolCmdStack, DebugToolCmdDown,
-	DebugToolCmdUp;
+	DebugToolCmdUp, DebugToolCmdBreak;
 
 // Modify the T3StackInfo to include a flag that we use to avoid
 // recursion (calling something that sets a breakpoint from within
@@ -33,12 +34,17 @@ modify T3StackInfo
 
 // The interactive debugger.
 modify __debugTool
+	// The number of lines of source context to display above and below the
+	// line referenced in the stack frame.
+	debuggerContextLines = 5
+
 	// The command prompt for the interactive debugger.
 	debuggerPrompt = '&gt;&gt;&gt; '
 
 	// LookupTable of the debugger commands and the methods to invoke for
 	// each.
 	debuggerCommands = static [
+		'break' -> &debuggerBreak,
 		'?' -> &debuggerHelp,
 		'help' -> &debuggerHelp,
 		'exit' -> &debuggerExit,
@@ -183,12 +189,21 @@ modify __debugTool
 	// Exit the debugger.
 	debuggerExit() { return(DebugToolCmdExit); }
 
+	debuggerBreak() {
+		if(t3DebugTrace(T3DebugCheck))
+			t3DebugTrace(T3DebugBreak);
+		else
+			"\nno debugger\n ";
+		return(DebugToolCmdBreak);
+	}
+
 	// Print the debugger commands.
 	debuggerHelp() {
 		"
 		\n<b>down</b>\tmove to the next lower stack frame
 		\n<b>exit</b>\texit interactive debugger, resuming execution
 		\n<b>help</b>\tdisplay this message
+		\n<b>list</b>\tdisplay the source code for the current stack frame
 		\n<b>print</b>\tprint the details of the current stack frame
 		\n<b>self</b>\tprint the self object in the current stack frame
 		\n<b>stack</b>\tprint the location of the current stack frame
@@ -197,58 +212,146 @@ modify __debugTool
 		return(DebugToolCmdHelp);
 	}
 
+	_debuggerPath(v?) {
+		local d, r;
+
+		if(v == nil) v = '.';
+
+		try {
+			d = new FileName(v);
+			r = toString(d.getAbsolutePath());
+		}
+		catch(Exception e) {
+			"\nerror opening current directory:\n ";
+			e.displayException();
+			return(nil);
+		}
+
+		return(r);
+	}
+
+	// See if we the given filename is absolute or not.  If it is, done.
+	// If it isn't try making an absolute path by appending the filename
+	// to the second argument.
+	_debuggerFixPath(fname, path) {
+		local d;
+
+		try {
+			// Create a new FileName object for the file
+			// name passed in the first arg.
+			d = new FileName(fname);
+
+			// If the file name is already absolute, we're
+			// done;  return the filename.
+			if(d.isAbsolute())
+				return(fname);
+
+			// The file name is NOT an absolute path, so
+			// try to get the absolute path it corresonds to.
+			d = d.getAbsolutePath(fname);
+
+			// If the above DID NOT throw an exception, we
+			// now have the absolute path, and can return
+			// it.  This will probably never happen.
+			return(toString(d));
+		}
+		catch(Exception e) {
+			// Something above threw an exception, almost
+			// certainly the getAbsolutePath() line, meaning
+			// that the fname we originally got as an argument
+			// isn't an absolute path and can't be automagically
+			// converted into one.  So now we try to
+			// construct an absolute path by tacking the
+			// first arg onto the second arg and calling
+			// ourselves.
+			fname = _debuggerFixPath(path + '/' + fname, path);
+		}
+
+		// Unlikely to ever reach this point.
+		return(fname);
+	}
+
+
 	// List the source for the current stack frame.
 	debuggerList() {
 		local fileHandle, fname, fr, line, lnum, v;
 
+		// Get the current frame.
 		fr = getStackFrame(_debuggerFrameOffset + 1);
 		if(fr == nil) {
 			"\tno stack frame found\n ";
 			return(DebugToolCmdList);
 		}
 
+		// Get the filename and line number from the stack frame.
 		fname = _getFrameSourceFile(fr);
 		lnum = _getFrameSourceLine(fr);
 		if((fname == nil) || (lnum == nil)) {
 			"\tunable to determine source file\n ";
 			return(DebugToolCmdList);
 		}
-fname = '../' + fname;
+
+		// Try to insure that the file name is an absolute
+		// path.
+		fname = _debuggerFixPath(fname, _debuggerPath(DEBUG_TOOL_PATH));
+
+		// Try to load and display the source.
 		try {
+			// Open the file for reading.
 			fileHandle = File.openTextFile(fname, FileAccessRead,
 				'utf8');
+			
+			// Create a vector to hold the source, one line per
+			// vector element.
 			v = new Vector();
-			//buf = new StringBuffer(fileHandle.getFileSize());
+
+			// Read a line.
 			line = fileHandle.readFile();
+
+			// Try to read the rest of the file.
 			while(line != nil) {
 				v.append(line);
 				line = fileHandle.readFile();
 			}
+
+			// Close the file.
 			fileHandle.closeFile();
+
+			// Now try to display the source near the return
+			// address from our stack frame.
 			_debuggerDisplaySource(v, lnum);
 		}
 		catch(Exception e) {
+			// Something terrible happened, complain.
+			"\nerror opening file <<fname>>\n ";
 			e.displayException();
 		}
 		finally {
+			// We always return our command "opcode", success
+			// or failure.
 			return(DebugToolCmdList);
 		}
 	}
 
+	// Very simplistic source code viewer.
+	// Args are:  a vector containing the source, one line per element;
+	// and the line number we want to display.
 	_debuggerDisplaySource(src, lnum) {
 		local i, min, max, r;
 
-		min = lnum - 10;
-		max = lnum + 10;
+		// By default we want to display the
+		min = lnum - debuggerContextLines;
+		max = lnum + debuggerContextLines;
+
+		// Basic sanity checking.
 		if(min < 1) min = 1;
 		if(max > src.length) max = src.length;
 		if(min > max) min = max;
 		if(max < min) max = min;
-		//inputManager.cancelInputInProgress(nil);
+
 		for(i = min; i <= max; i++) {
 			r = rexReplace('\n', toString(src[i]), '', ReplaceAll);
-			//tadsSay('\n<<%03d i>> <<r>>\n ');
-			"\n<<%03d i>> <<r>>\n ";
+			"\n<<((i == lnum) ? '&gt;' : '\ ')>><<%03d i>> <<r>>\n ";
 		}
 	}
 

@@ -18,6 +18,7 @@ modify __debugTool
 
 	// When displaying file names, use only the base, not the full path.
 	shortPaths = true
+	//shortPaths = nil
 
 	// Used by the path shortening logic.  This is the character used
 	// to divide paths in a filename.
