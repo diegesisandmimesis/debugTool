@@ -77,3 +77,6 @@
 // tweak the appropriate catch() blocks in the replacement runScheduler()
 // function in debugToolEvents.t
 //#define DEBUG_TOOL_CATCH_ALL
+
+// Don't comment out the line below.  It's used for dependency checking.
+#define DEBUG_TOOL_H
