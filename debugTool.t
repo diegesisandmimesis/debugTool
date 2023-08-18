@@ -217,12 +217,21 @@ __debugTool: object
 	_error(svc, msg?) { "\n<<_format(svc, msg, nil)>>\n "; }
 
 	// Convenience wrapper for the library's method.
-	valToSymbol(v) { return(reflectionServices.valToSymbol(v)); }
+	valToSymbol(v) { return(toString(v)); }
 ;
 
 #ifdef __DEBUG_TOOL
+
+modify DebugTool
+	valToSymbol(v) { return(reflectionServices.valToSymbol(v)); }
+;
+
+#endif // __DEBUG_TOOL
+
+#ifdef DEBUG_TOOL_LOGGING
+
 modify __debugTool
 	_debug(svc, msg?, ind?) { "\n<<_format(svc, msg, ind)>>\n "; }
 ;
 
-#endif // __DEBUG_TOOL
+#endif // DEBUG_TOOL_LOGGING

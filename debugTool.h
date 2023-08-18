@@ -2,8 +2,17 @@
 // debugTool.h
 //
 
-// Uncomment to enable debugging options.
+// Uncomment to enable the interactive debugger.
+// This toggles all of the stuff associated with the interactive
+// debugger.  You do NOT need to enable this if you just need the
+// logging stuff, which is controlled by the DEBUG_TOOL_LOGGING flag below.
 //#define __DEBUG_TOOL
+
+// Uncomment to enable debug logging.
+// This controls whether DebugTool._debug() produces any output or not.
+// This is independent of all the interactive debugger stuff, which
+// is controlled by the __DEBUG_TOOL flag above.
+//#define DEBUG_TOOL_LOGGING
 
 // The "root" path of the project.  This can either be an absolute
 // path or the relative path FROM the directory the story file lives

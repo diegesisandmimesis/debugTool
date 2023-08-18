@@ -12,6 +12,7 @@
 
 #include "debugTool.h"
 
+#ifdef __DEBUG_TOOL
 #ifdef DEBUG_TOOL_CATCH_ALL
 
 // We semi-kludgily replace the main scheduler loop with our own version
@@ -92,3 +93,4 @@ replace runScheduler() {
 }
 
 #endif // DEBUG_TOOL_CATCH_ALL
+#endif // __DEBUG_TOOL
