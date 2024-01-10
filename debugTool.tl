@@ -6,3 +6,4 @@ source: debugToolActions.t
 source: debugToolDebugger.t
 source: debugToolEvents.t
 source: debugToolException.t
+source: debugToolObject.t
